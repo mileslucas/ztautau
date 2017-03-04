@@ -1,0 +1,6 @@
+#include "root.h"
+
+void testing(){
+  TFile *hfile1 = new TFile("emu_zttllcxxx_is722.root");
+  hfile1->Print();
+}
