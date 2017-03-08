@@ -1,9 +1,0 @@
-void data() {
-  TFile *f1 = new TFile("emu_data.root");
-  TTree *t1 = (TTree *) f1->Get("h10");
-
-  TCanvas *c1 = new TCanvas("c", "Data Hiss", 1000, 1000);
-  gStyle->SetOptStat(111111);
-
-  TCut cut = "";
-}
