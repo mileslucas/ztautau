@@ -14,17 +14,14 @@ void simulation(){
   system("rm -r hists/*"); // clear histogram folder
   system("mkdir hists");
   
-  /* Import files */
-  TFile *ztt_f = new TFile("emu_zttllcxxx_is722.root");
-  TFile *gamma_f = new TFile("emu_dyemxmg25_py560.root");
-  TFile *ww_f = new TFile("emu_wwllcxxxx_py057.root");
-  TFile *tt_f = new TFile("emu_ttll170xs_hw05.root");
+  /* Import file */
+  TFile *f1 = new TFile("emu_data.root");;
 
   /* Get Trees */
-  TTree *ztt = (TTree *) ztt_f->Get("h10");
-  TTree *gamma = (TTree *) gamma_f->Get("h10");
-  TTree *ww = (TTree *) ww_f->Get("h10");
-  TTree *tt = (TTree *) tt_f->Get("h10");
+  TTree *ztt = (TTree *) f1->Get("ztt");
+  TTree *gamma = (TTree *) f1->Get("gamma");
+  TTree *ww = (TTree *) f1->Get("ww");
+  TTree *tt = (TTree *) f1->Get("tt");
 
   /* Set up canvas */
   TCanvas *c1 = new TCanvas("c", "Simulation Hists", 1000, 1000);
