@@ -5,30 +5,23 @@ using namespace std;
 void cutFinder(){
 
   /* Import files */
-  TFile *ztt_f = new TFile("emu_zttllcxxx_is722.root");
-  TFile *gamma_f = new TFile("emu_dyemxmg25_py560.root");
-  TFile *ww_f = new TFile("emu_wwllcxxxx_py057.root");
-  TFile *tt_f = new TFile("emu_ttll170xs_hw05.root");
+  TFile *f = new TFile("emu_data.root");
 
   /* Get Trees */
-  TTree *ztt = (TTree *) ztt_f->Get("h10");
-  TTree *gamma = (TTree *) gamma_f->Get("h10");
-  TTree *ww = (TTree *) ww_f->Get("h10");
-  TTree *tt = (TTree *) tt_f->Get("h10");
+  TTree *ztt = (TTree *) f->Get("ztt");
+  TTree *gamma = (TTree *) f->Get("gamma");
+  TTree *ww = (TTree *) f->Get("ww");
+  TTree *tt = (TTree *) f->Get("tt");
 
   /* Choose histogram variables */
   const char* varnames[] = {
     "ptm1", // transverse momentum of muon 1
     "ete1", // transverse E of electron 1
-    "ete2", // transverse E of electron 2
-    //"met4", // calorimeter missing Et
     "met5", // total missing Et
     "nnej", // number of jets
     "etj1", // transverse energy of jet 1
-    "etj2", // transverse energy of jet 2
     "memu",
     "mej1",
-    "mej2",
   };
   int numvars = sizeof(varnames)/sizeof(varnames[0]);/* Define Cuts */
 
@@ -46,12 +39,19 @@ void cutFinder(){
      and find the max sig/bkg ratio */
   int varRatioMax[numvars];
   int varRatioMin[numvars];
-  
-  for(int i = 0; i < numvars; i++) {
+  string minCut[numvars];
+  string maxCut[numvars];
+    
+  stringstream cutbuffer;  
+
+  double csErrorMin = 100;
+    double bestBias = .1;
+
+for(int i = 0; i < numvars; i++) {
     
     int ratioMax = 0;
-    for(int j = 0; j < 250; j++) {
-      const char *cut = (string(varnames[i])+"<"+to_string(j)).c_str();
+    for(int a = 0; a < 250; a++) {
+      const char *cut = (string(varnames[i])+"<"+to_string(a)).c_str();
       int cutZtt = ztt->GetEntries(cut);
       int cutGamma = gamma->GetEntries(cut);
       int cutWW = ww->GetEntries(cut);
@@ -71,15 +71,16 @@ void cutFinder(){
 
       
 
-      if (ratio > ratioMax){
-	varRatioMax[i] = j;
+      if (ratio > (ratioMax + bestBias)){
+	varRatioMax[i] = a;
+    maxCut[i]= string(cut);
 	ratioMax = ratio;
       }
       
     }
     ratioMax = 0;
-    for(int j = 250; j >= 0; j--) {
-      const char *cut = (string(varnames[i])+">"+to_string(j)).c_str();
+    for(int b = 0; b < varRatioMax[i]; b++) {
+      const char *cut = (string(varnames[i])+">"+to_string(b)).c_str();
       int cutZtt = ztt->GetEntries(cut);
       int cutGamma = gamma->GetEntries(cut);
       int cutWW = ww->GetEntries(cut);
@@ -99,21 +100,32 @@ void cutFinder(){
 
       
 
-      if (ratio > ratioMax){
-	varRatioMin[i] = j;
+      if (ratio > (ratioMax + bestBias)){
+	varRatioMin[i] = b;
+    minCut[i] = string(cut);
 	ratioMax = ratio;
       }
       
     }
-
+    /*
     printf("%d < %s < %d\n",varRatioMin[i], varnames[i], varRatioMax[i]);
+    printf("%s && %s\n", minCut[i].c_str(), maxCut[i].c_str());
+    cout << "(" << minCut[i] << ") && (" << maxCut[i] << ")" << endl;
+    */
+    cutbuffer << "(" << minCut[i] << ")&&(" << maxCut[i] << ")" << "&&";
   
   }
-
+    string s = cutbuffer.str();
+    cutbuffer.str(string());
+    s = s.substr(0, s.size() - 2); 
+    //cout << s << endl;
+    /*
   TCut cut = "(ptm1<29)&&(ete1<32)&&(ete2<11)&& \
               (met5<22)&&(nnej<2)&&(etj1<43)&&  \
-              (etj2<14)&&(memu>11)&&(memu<86)&& \
+              (etj2<14)&&(memu>30)&&(memu<86)&& \
               (mej1<68)&&(mej2<34)";
+*/
+    TCut cut = s.c_str();
 
   int cutZtt = ztt->GetEntries(cut);
   int cutGamma = gamma->GetEntries(cut);
@@ -132,8 +144,15 @@ void cutFinder(){
 
   double ratio = exp_ztt / (exp_gamma + exp_ww + exp_tt);
 
-  printf("Eff: %f\n", eff_ztt);
+  printf("Num: %d %d %d %d\n", cutZtt, cutGamma, cutWW, cutTT);
   printf("ZTT: %f Gamma: %f WW: %f TT: %f\n", exp_ztt, exp_gamma, exp_ww, exp_tt);
   printf("Final Ratio: %f\n", ratio);
   
+// Get actual entries
+    int entries = ((TTree *) f->Get("data"))->GetEntries(cut);
+   printf("Actual Entries: %d\n", entries);
+
+    // calculate cross section
+    double cs = (entries - (exp_gamma + exp_ww + exp_tt)) / (eff_ztt * L);
+    printf("Cross Section: %f\n", cs);
 }
