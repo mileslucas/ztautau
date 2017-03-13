@@ -14,6 +14,7 @@ double cs_tt = 0.4;
 double L = 108.3;
 
 double getRatio(int, int, int, int, bool);
+double getCS(int, int, int, int, int);
 
 void cutFinder() {
 
@@ -46,14 +47,6 @@ void cutFinder() {
         int n_gamma;
         int n_ww;
         int n_tt;
-        double eff_ztt;
-        double eff_gamma;
-        double eff_ww;
-        double eff_tt;
-        double exp_ztt;
-        double exp_gamma;
-        double exp_ww;
-        double exp_tt;
         double ratio;
         double max_ratio;
         string varCut[numvars];
@@ -116,71 +109,76 @@ void cutFinder() {
         ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
 
         cutbuffer.str(string());
-        stringstream tmpCutBuffer;
-
-
-        cout << endl << "### COMBINED CYCLES ###" << endl;
-        /* Now we must take this cut and tweak the values while considering all the
-           other
-           cuts */
-        for (int i = 0; i < numvars; i++) {
-                max_ratio = 0;
-                for (int ceil = 0; ceil < 100; ceil++) {
-                        for (int floor = 0; floor < ceil; floor++) {
-                                tmpCutBuffer.str(string());
-                                // ignore cuts that are within 1 of each other due to clobbering
-                                // also ignore cuts that are not real (floor higher than ceiling)
-                                if ((ceil - floor) < 2)
-                                        continue;
-
-                                // Define cut using some c++ string mangling then getting its c string
-                                cut_str = "(" + string(varnames[i]) + ">" + to_string(floor) + ")&&(" +
-                                          string(varnames[i]) + "<" + to_string(ceil) + ")";
-                                // Now  we have to replace it within the origin cut
-                                for(int q = 0; q < numvars; q++) {
-                                        if (q == i) tmpCutBuffer << cut_str << "&&";
-                                        else tmpCutBuffer << varCut[q] << "&&";
-                                }
-                                string s = tmpCutBuffer.str();
-                                s = s.substr(0, s.size() - 2);
-                                //cout << s << endl;
-                                TCut cut = s.c_str();
-
-                                // Get the number of entries after the cut
-                                n_ztt = ztt->GetEntries(cut);
-                                n_gamma = gamma->GetEntries(cut);
-                                n_ww = ww->GetEntries(cut);
-                                n_tt = tt->GetEntries(cut);
-
-                                ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 0);
-                                if (ratio > max_ratio) {
-                                        bestCeilingCut[i] = ceil;
-                                        bestFloorCut[i] = floor;
-                                        varCut[i] = cut_str;
-                                        max_ratio = ratio;
-                                }
-                        }
-                }
-
-                //cout << varCut[i] << endl;
-                if (varCut[i] != "") {
-                        cutbuffer << varCut[i] << "&&";
-                }
-        }
-
-        string new_s = cutbuffer.str();
-        new_s = new_s.substr(0, new_s.size() - 2);
-        cout << new_s << endl;
-        TCut cut_revision = new_s.c_str();
-
-        n_ztt = ztt->GetEntries(cut_revision);
-        n_gamma = gamma->GetEntries(cut_revision);
-        n_ww = ww->GetEntries(cut_revision);
-        n_tt = tt->GetEntries(cut_revision);
-
-        ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
+        // stringstream tmpCutBuffer;
+        //
+        // cout << endl << "### COMBINED CYCLES ###" << endl;
+        // /* Now we must take this cut and tweak the values while considering all the
+        //    other
+        //    cuts */
+        // for (int i = 0; i < numvars; i++) {
+        //         max_ratio = 0;
+        //         for (int ceil = 0; ceil < 100; ceil++) {
+        //                 for (int floor = 0; floor < ceil; floor++) {
+        //                         tmpCutBuffer.str(string());
+        //                         // ignore cuts that are within 1 of each other due to clobbering
+        //                         // also ignore cuts that are not real (floor higher than ceiling)
+        //                         if ((ceil - floor) < 2)
+        //                                 continue;
+        //
+        //                         // Define cut using some c++ string mangling then getting its c string
+        //                         cut_str = "(" + string(varnames[i]) + ">" + to_string(floor) + ")&&(" +
+        //                                   string(varnames[i]) + "<" + to_string(ceil) + ")";
+        //                         // Now  we have to replace it within the origin cut
+        //                         for(int q = 0; q < numvars; q++) {
+        //                                 if (q == i) tmpCutBuffer << cut_str << "&&";
+        //                                 else tmpCutBuffer << varCut[q] << "&&";
+        //                         }
+        //                         string s = tmpCutBuffer.str();
+        //                         s = s.substr(0, s.size() - 2);
+        //                         //cout << s << endl;
+        //                         TCut cut = s.c_str();
+        //
+        //                         // Get the number of entries after the cut
+        //                         n_ztt = ztt->GetEntries(cut);
+        //                         n_gamma = gamma->GetEntries(cut);
+        //                         n_ww = ww->GetEntries(cut);
+        //                         n_tt = tt->GetEntries(cut);
+        //
+        //                         ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 0);
+        //                         if (ratio > max_ratio) {
+        //                                 bestCeilingCut[i] = ceil;
+        //                                 bestFloorCut[i] = floor;
+        //                                 varCut[i] = cut_str;
+        //                                 max_ratio = ratio;
+        //                         }
+        //                 }
+        //         }
+        //
+        //         //cout << varCut[i] << endl;
+        //         if (varCut[i] != "") {
+        //                 cutbuffer << varCut[i] << "&&";
+        //         }
+        // }
+        //
+        // string new_s = cutbuffer.str();
+        // new_s = new_s.substr(0, new_s.size() - 2);
+        // cout << new_s << endl;
+        // TCut cut_revision = new_s.c_str();
+        //
+        // n_ztt = ztt->GetEntries(cut_revision);
+        // n_gamma = gamma->GetEntries(cut_revision);
+        // n_ww = ww->GetEntries(cut_revision);
+        // n_tt = tt->GetEntries(cut_revision);
+        //
+        // ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
 
         /* Now we calculate the cross section */
+
+        TTree *data = (TTree *) f->Get("data");
+        int count = data->GetEntries(cut);
+        cout << "Actual count: " << count << endl;
+        cout << "emu cross section: " << double cs = getCS(count, n_ztt, n_gamma, n_ww, n_tt) << endl;
+        cout << "Z->TT cross section: " << cs / (2 * .17 * .17) << endl;
 }
 
 /* This returns the ratio of s / sqrt(s+q) for the given number of entries */
@@ -199,13 +197,29 @@ double getRatio(int n_ztt, int n_gamma, int n_ww, int n_tt, bool verbose) {
 
         double ratio = exp_ztt / TMath::Sqrt(exp_tt + exp_gamma + exp_ww + exp_tt);
         if (verbose) {
-                printf("Entries-\n\tZTT: %9d Gamma: %9d WW: %9d TT: %9d\n", n_ztt, n_gamma,
-                       n_ww, n_tt);
-                printf("Efficiencies-\n\tZTT: %9f Gamma: %9f WW: %9f TT: %9f\n", eff_ztt,
-                       eff_gamma, eff_ww, eff_tt);
-                printf("Expected-\n\tZTT: %9f Gamma: %9f WW: %9f TT: %9f\n", exp_ztt,
-                       exp_gamma, exp_ww, exp_tt);
+                printf("Entries-\n\tZTT: %9d Gamma: %9d WW: %9d TT: %9d\n",
+                       n_ztt, n_gamma, n_ww, n_tt);
+                printf("Efficiencies-\n\tZTT: %9f Gamma: %9f WW: %9f TT: %9f\n",
+                       eff_ztt, eff_gamma, eff_ww, eff_tt);
+                printf("Expected-\n\tZTT: %9f Gamma: %9f WW: %9f TT: %9f\n",
+                       exp_ztt, exp_gamma, exp_ww, exp_tt);
                 printf("Final Ratio: %9f\n", ratio);
         }
         return ratio;
+}
+
+double getCS(int count, int n_ztt, int n_gamma, int n_ww, int n_tt) {
+        // Get the efficiency (sig/total)
+        double eff_ztt = n_ztt / N_ztt;
+        double eff_gamma = n_gamma / N_gamma;
+        double eff_ww = n_ww / N_ww;
+        double eff_tt = n_tt / N_tt;
+
+        // Get the expected values (luminosity * cross section * efficiency)
+        double exp_ztt = eff_ztt * cs_ztt * L;
+        double exp_gamma = eff_gamma * cs_gamma * L;
+        double exp_ww = eff_ww * cs_ww * L;
+        double exp_tt = eff_tt * cs_tt * L;
+
+        return (double(count) - (exp_gamma + exp_ww + exp_tt)) / (eff_ztt * L);
 }
