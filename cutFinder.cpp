@@ -1,6 +1,16 @@
 #include <string>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <TFile.h>
+#include <TTree.h>
+#include <TMath.h>
+#include <TCut.h>
+#include <omp.h>
 
 using namespace std;
+
+ofstream outf;
 
 /* These are the variables from the monte carlo simulations */
 double N_ztt = 71393;
@@ -16,31 +26,42 @@ double L = 108.3;
 double getRatio(int, int, int, int, bool);
 double getCS(int, int, int, int, int);
 
-void cutFinder() {
 
-        /* Import files */
-        TFile *f = new TFile("emu_data.root");
+int main(int argc, char* argv[]) {
+
+        /* Open up output file */
+        outf.open("cut.log");
+
+        /* open up data file*/
+        TFile *data_f = new TFile("emu_data.root");
+        TFile *ztt_f = new TFile("emu_zttllcxxx_is722.root");
+        TFile *gamma_f = new TFile("emu_dyemxmg25_py560.root");
+        TFile *ww_f = new TFile("emu_wwllcxxxx_py057.root");
+        TFile *tt_f = new TFile("emu_ttll170xs_hw05.root");
+
 
         /* Get Trees */
-        TTree *ztt = (TTree *)f->Get("ztt");
-        TTree *gamma = (TTree *)f->Get("gamma");
-        TTree *ww = (TTree *)f->Get("ww");
-        TTree *tt = (TTree *)f->Get("tt");
+        TTree *ztt = (TTree *)ztt_f->Get("h10");
+        TTree *gamma = (TTree *)gamma_f->Get("h10");
+        TTree *ww = (TTree *)ww_f->Get("h10");
+        TTree *tt = (TTree *)tt_f->Get("h10");
 
         /* Choose histogram variables */
-        const char *varnames[] = {"ptm1", // transverse momentum of muon 1
-                                  "ete1", // transverse E of electron 1
-                                  "met4",
-                                  "met5", // total missing Et
-                                  "nnej", // number of jets
-                                  "etj1", // transverse energy of jet 1
-                                  "memu", "mej1"};
-        int numvars = sizeof(varnames) / sizeof(varnames[0]);
+        const char *varnames[] = {
+                "met5",
+                "ete1",
+                "ptm1",
+                "memu",
+        };
 
-        /* For each variable, go through a number of cuts
-           and find the max sig/bkg ratio */
-        int bestFloorCut[numvars];
-        int bestCeilingCut[numvars];
+        const char *overrides[] = {
+                "(met4>20)&&(met4<31)",
+                "(nnej<3)"
+        };
+
+
+        int numvars = sizeof(varnames) / sizeof(varnames[0]);
+        int numoverrides = sizeof(overrides) / sizeof(overrides[0]);
 
         /* Initializing variables */
         int n_ztt;
@@ -49,13 +70,16 @@ void cutFinder() {
         int n_tt;
         double ratio;
         double max_ratio;
+        string cut_str;
         string varCut[numvars];
 
         stringstream cutbuffer;
 
-        string cut_str;
-        cout << "### INDIVIDUAL CYCLES ###" << endl;
+        outf << " ----- Grid Search Cut Finder -----" << endl;
+        outf <<  "### INDIVIDUAL CYCLES ###" << endl;
+        cout <<  "### INDIVIDUAL CYCLES ###" << endl;
 
+        //#pragma omp parallel for
         for (int i = 0; i < numvars; i++) {
                 max_ratio = 0;
                 for (int ceil = 0; ceil < 100; ceil++) {
@@ -80,8 +104,6 @@ void cutFinder() {
                                 ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 0);
 
                                 if (ratio > max_ratio) {
-                                        bestCeilingCut[i] = ceil;
-                                        bestFloorCut[i] = floor;
                                         varCut[i] = cut_str;
                                         max_ratio = ratio;
                                 }
@@ -91,14 +113,20 @@ void cutFinder() {
                 //cout << varCut[i] << endl;
                 if (varCut[i] != "") {
                         cutbuffer << varCut[i] << "&&";
+                        outf << varCut[i] << endl;
                 }
+                cout << "Finished: " << varnames[i] << "   [" << double(i+1)*100/numvars << "%]" << endl;
         }
 
         /* Take the combination of cuts and put them together */
-
         string s = cutbuffer.str();
+        for(int i = 0; i < numoverrides; i++) {
+          s += overrides[i];
+          s += "&&";
+          outf << overrides[i] << endl;
+        }
         s = s.substr(0, s.size() - 2);
-        cout << s << endl;
+        // cout<< s << endl;
         TCut cut = s.c_str();
 
         n_ztt = ztt->GetEntries(cut);
@@ -106,15 +134,19 @@ void cutFinder() {
         n_ww = ww->GetEntries(cut);
         n_tt = tt->GetEntries(cut);
 
-        ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
-
+        getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
+        // clear the string buffer
         cutbuffer.str(string());
+        // /* below is the code for going through a second pass testing all cuts in
+        //  * conjuction with all other cuts */
         // stringstream tmpCutBuffer;
         //
+        // outf << endl << "### COMBINED CYCLES ###" << endl;
         // cout << endl << "### COMBINED CYCLES ###" << endl;
         // /* Now we must take this cut and tweak the values while considering all the
         //    other
         //    cuts */
+        // //#pragma omp parallel for
         // for (int i = 0; i < numvars; i++) {
         //         max_ratio = 0;
         //         for (int ceil = 0; ceil < 100; ceil++) {
@@ -134,8 +166,9 @@ void cutFinder() {
         //                                 else tmpCutBuffer << varCut[q] << "&&";
         //                         }
         //                         string s = tmpCutBuffer.str();
+        //
         //                         s = s.substr(0, s.size() - 2);
-        //                         //cout << s << endl;
+        //                         // cout << s << endl;
         //                         TCut cut = s.c_str();
         //
         //                         // Get the number of entries after the cut
@@ -146,39 +179,46 @@ void cutFinder() {
         //
         //                         ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 0);
         //                         if (ratio > max_ratio) {
-        //                                 bestCeilingCut[i] = ceil;
-        //                                 bestFloorCut[i] = floor;
         //                                 varCut[i] = cut_str;
         //                                 max_ratio = ratio;
         //                         }
         //                 }
         //         }
         //
-        //         //cout << varCut[i] << endl;
+        //         //outf << varCut[i] << endl;
         //         if (varCut[i] != "") {
         //                 cutbuffer << varCut[i] << "&&";
+        //                 outf << varCut[i] << endl;
         //         }
+        //         cout << "Finished: " << varnames[i] << "   [" << double(i+1)*100/numvars << "%]" << endl;
         // }
         //
-        // string new_s = cutbuffer.str();
-        // new_s = new_s.substr(0, new_s.size() - 2);
-        // cout << new_s << endl;
-        // TCut cut_revision = new_s.c_str();
+        // s = cutbuffer.str();
+        // for(int i = 0; i < numoverrides; i++) {
+        //   s += overrides[i];
+        //   s += "&&";
+        //   outf << overrides[i] << endl;
+        // }
+        // s = s.substr(0, s.size() - 2);
+        // // cout<< s << endl;
+        // TCut cut_revision = s.c_str();
         //
         // n_ztt = ztt->GetEntries(cut_revision);
         // n_gamma = gamma->GetEntries(cut_revision);
         // n_ww = ww->GetEntries(cut_revision);
         // n_tt = tt->GetEntries(cut_revision);
         //
-        // ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
+        // getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
 
         /* Now we calculate the cross section */
-
-        TTree *data = (TTree *) f->Get("data");
+        TTree *data = (TTree *) data_f->Get("h10");
         int count = data->GetEntries(cut);
-        cout << "Actual count: " << count << endl;
-        cout << "emu cross section: " << double cs = getCS(count, n_ztt, n_gamma, n_ww, n_tt) << endl;
-        cout << "Z->TT cross section: " << cs / (2 * .17 * .17) << endl;
+        outf << "Actual count: " << count << endl;
+        double cs = getCS(count, n_ztt, n_gamma, n_ww, n_tt);
+        outf << "emu cross section: " << cs << endl;
+        outf << "Z->TT cross section: " << cs / (2 * .17 * .17) << endl;
+
+        return 0;
 }
 
 /* This returns the ratio of s / sqrt(s+q) for the given number of entries */
@@ -197,17 +237,19 @@ double getRatio(int n_ztt, int n_gamma, int n_ww, int n_tt, bool verbose) {
 
         double ratio = exp_ztt / TMath::Sqrt(exp_tt + exp_gamma + exp_ww + exp_tt);
         if (verbose) {
-                printf("Entries-\n\tZTT: %9d Gamma: %9d WW: %9d TT: %9d\n",
-                       n_ztt, n_gamma, n_ww, n_tt);
-                printf("Efficiencies-\n\tZTT: %9f Gamma: %9f WW: %9f TT: %9f\n",
-                       eff_ztt, eff_gamma, eff_ww, eff_tt);
-                printf("Expected-\n\tZTT: %9f Gamma: %9f WW: %9f TT: %9f\n",
-                       exp_ztt, exp_gamma, exp_ww, exp_tt);
-                printf("Final Ratio: %9f\n", ratio);
+                outf << endl <<
+                "Entries\n\tZTT: " << n_ztt << " Gamma: " << n_gamma <<
+                " WW: " << n_ww << " TT: " << n_tt << endl;
+                outf << "Efficiencies\n\tZTT: " << eff_ztt << " Gamma: " << eff_gamma <<
+                " WW: " << eff_ww << " TT: " << eff_tt << endl;
+                outf << "Expected\n\tZTT: " << exp_ztt << " Gamma: " << exp_gamma <<
+                " WW: " << exp_ww << " TT: " << exp_tt << endl;
+                outf << "Final Ratio\n\t" << ratio << endl;
         }
         return ratio;
 }
 
+/* Returns the cross section of an experimental cut. Do not use willy-nilly */
 double getCS(int count, int n_ztt, int n_gamma, int n_ww, int n_tt) {
         // Get the efficiency (sig/total)
         double eff_ztt = n_ztt / N_ztt;
@@ -216,7 +258,6 @@ double getCS(int count, int n_ztt, int n_gamma, int n_ww, int n_tt) {
         double eff_tt = n_tt / N_tt;
 
         // Get the expected values (luminosity * cross section * efficiency)
-        double exp_ztt = eff_ztt * cs_ztt * L;
         double exp_gamma = eff_gamma * cs_gamma * L;
         double exp_ww = eff_ww * cs_ww * L;
         double exp_tt = eff_tt * cs_tt * L;
