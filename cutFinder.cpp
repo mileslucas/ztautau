@@ -22,6 +22,7 @@ double cs_ww = 0.69;
 double N_tt = 101339;
 double cs_tt = 0.4;
 double L = 108.3;
+double eff_id = 0.755;
 
 double getRatio(int, int, int, int, bool);
 double getCS(int, int, int, int, int);
@@ -135,80 +136,6 @@ int main(int argc, char* argv[]) {
         n_tt = tt->GetEntries(cut);
 
         getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
-        // clear the string buffer
-        cutbuffer.str(string());
-        // /* below is the code for going through a second pass testing all cuts in
-        //  * conjuction with all other cuts */
-        // stringstream tmpCutBuffer;
-        //
-        // outf << endl << "### COMBINED CYCLES ###" << endl;
-        // cout << endl << "### COMBINED CYCLES ###" << endl;
-        // /* Now we must take this cut and tweak the values while considering all the
-        //    other
-        //    cuts */
-        // //#pragma omp parallel for
-        // for (int i = 0; i < numvars; i++) {
-        //         max_ratio = 0;
-        //         for (int ceil = 0; ceil < 100; ceil++) {
-        //                 for (int floor = 0; floor < ceil; floor++) {
-        //                         tmpCutBuffer.str(string());
-        //                         // ignore cuts that are within 1 of each other due to clobbering
-        //                         // also ignore cuts that are not real (floor higher than ceiling)
-        //                         if ((ceil - floor) < 2)
-        //                                 continue;
-        //
-        //                         // Define cut using some c++ string mangling then getting its c string
-        //                         cut_str = "(" + string(varnames[i]) + ">" + to_string(floor) + ")&&(" +
-        //                                   string(varnames[i]) + "<" + to_string(ceil) + ")";
-        //                         // Now  we have to replace it within the origin cut
-        //                         for(int q = 0; q < numvars; q++) {
-        //                                 if (q == i) tmpCutBuffer << cut_str << "&&";
-        //                                 else tmpCutBuffer << varCut[q] << "&&";
-        //                         }
-        //                         string s = tmpCutBuffer.str();
-        //
-        //                         s = s.substr(0, s.size() - 2);
-        //                         // cout << s << endl;
-        //                         TCut cut = s.c_str();
-        //
-        //                         // Get the number of entries after the cut
-        //                         n_ztt = ztt->GetEntries(cut);
-        //                         n_gamma = gamma->GetEntries(cut);
-        //                         n_ww = ww->GetEntries(cut);
-        //                         n_tt = tt->GetEntries(cut);
-        //
-        //                         ratio = getRatio(n_ztt, n_gamma, n_ww, n_tt, 0);
-        //                         if (ratio > max_ratio) {
-        //                                 varCut[i] = cut_str;
-        //                                 max_ratio = ratio;
-        //                         }
-        //                 }
-        //         }
-        //
-        //         //outf << varCut[i] << endl;
-        //         if (varCut[i] != "") {
-        //                 cutbuffer << varCut[i] << "&&";
-        //                 outf << varCut[i] << endl;
-        //         }
-        //         cout << "Finished: " << varnames[i] << "   [" << double(i+1)*100/numvars << "%]" << endl;
-        // }
-        //
-        // s = cutbuffer.str();
-        // for(int i = 0; i < numoverrides; i++) {
-        //   s += overrides[i];
-        //   s += "&&";
-        //   outf << overrides[i] << endl;
-        // }
-        // s = s.substr(0, s.size() - 2);
-        // // cout<< s << endl;
-        // TCut cut_revision = s.c_str();
-        //
-        // n_ztt = ztt->GetEntries(cut_revision);
-        // n_gamma = gamma->GetEntries(cut_revision);
-        // n_ww = ww->GetEntries(cut_revision);
-        // n_tt = tt->GetEntries(cut_revision);
-        //
-        // getRatio(n_ztt, n_gamma, n_ww, n_tt, 1);
 
         /* Now we calculate the cross section */
         TTree *data = (TTree *) data_f->Get("h10");
@@ -216,7 +143,7 @@ int main(int argc, char* argv[]) {
         outf << "Actual count: " << count << endl;
         double cs = getCS(count, n_ztt, n_gamma, n_ww, n_tt);
         outf << "emu cross section: " << cs << endl;
-        outf << "Z->TT cross section: " << cs / (2 * .17 * .17) << endl;
+        outf << "Z->TT cross section: " << cs / (0.0620) << endl;
 
         return 0;
 }
@@ -251,6 +178,8 @@ double getRatio(int n_ztt, int n_gamma, int n_ww, int n_tt, bool verbose) {
 
 /* Returns the cross section of an experimental cut. Do not use willy-nilly */
 double getCS(int count, int n_ztt, int n_gamma, int n_ww, int n_tt) {
+        //correct count for identification efficiency
+        count /= eff_id;
         // Get the efficiency (sig/total)
         double eff_ztt = n_ztt / N_ztt;
         double eff_gamma = n_gamma / N_gamma;

@@ -1,0 +1,72 @@
+commit a733a7d9b6d37bd5b63152ac9ec761feef6b247b
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Tue Mar 28 09:04:09 2017 -0500
+
+    switched to compiled cpp file
+
+commit 9802ba5f49e884d660126e35d931bc33f76bdc61
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Mon Mar 13 06:32:57 2017 -0500
+
+    can now get cross section...
+
+commit 11680c4f43fb369718516118feeb8341fec70426
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Mon Mar 13 05:25:49 2017 -0500
+
+    updated cutfinder to use a tripley-nested loop and combined cycle
+
+commit 1c860aa8f489da9d4df7467ffcd2c95ca1611223
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Thu Mar 9 03:59:10 2017 -0600
+
+    cutfinder updated to use bias so it wouldn't clobber all its data
+
+commit fc0e5a41a75790801cee5c9eaf15e73a4d106663
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Thu Mar 9 02:01:01 2017 -0600
+
+    converted all data files into one file with 5 trees
+
+commit 0218a30c1246debc1edf073900e114a57a28d039
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Tue Mar 7 21:38:49 2017 -0600
+
+    fixed gitingore
+
+commit 38b1690f0eb6b81118b8cbf8cb05d566dbe7f980
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Tue Mar 7 21:34:11 2017 -0600
+
+    yes
+
+commit 602d5708d70a9973d861c8caff471b0d2bf41d1c
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Sat Mar 4 00:24:29 2017 -0600
+
+    complete switch to root
+
+commit c2bc9d8a8d1579eb37526c9d208bcaeae5804239
+Merge: 2e2113c 4334020
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Tue Feb 28 16:22:24 2017 -0600
+
+    added gitignore
+
+commit 43340208f615283c5a1380cd9fa1fdf6faee4026
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Mon Feb 20 13:53:38 2017 -0600
+
+    edited data fills and cuts in the kumac
+
+commit 2e2113cdf9f75a94156eb5fa8015197ec3598ea5
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Thu Feb 16 17:49:34 2017 -0600
+
+    added kumac based off logans
+
+commit 9c16f683b12e8a4e612399a71716d038727a3b55
+Author: Miles Lucas <mdlucas@iastate.edu>
+Date:   Thu Feb 16 14:48:34 2017 -0600
+
+    first commit
