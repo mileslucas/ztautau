@@ -23,6 +23,7 @@ double N_tt = 101339;
 double cs_tt = 0.4;
 double L = 108.3;
 double eff_id = 0.755;
+double branch_ratio = 0.0620;
 
 double getRatio(int, int, int, int, bool);
 double getCS(int, int, int, int, int);
@@ -34,11 +35,11 @@ int main(int argc, char* argv[]) {
         outf.open("cut.log");
 
         /* open up data file*/
-        TFile *data_f = new TFile("emu_data.root");
-        TFile *ztt_f = new TFile("emu_zttllcxxx_is722.root");
-        TFile *gamma_f = new TFile("emu_dyemxmg25_py560.root");
-        TFile *ww_f = new TFile("emu_wwllcxxxx_py057.root");
-        TFile *tt_f = new TFile("emu_ttll170xs_hw05.root");
+        TFile *data_f = new TFile("data/emu_data.root");
+        TFile *ztt_f = new TFile("data/emu_zttllcxxx_is722.root");
+        TFile *gamma_f = new TFile("data/emu_dyemxmg25_py560.root");
+        TFile *ww_f = new TFile("data/emu_wwllcxxxx_py057.root");
+        TFile *tt_f = new TFile("data/emu_ttll170xs_hw05.root");
 
 
         /* Get Trees */
@@ -143,7 +144,7 @@ int main(int argc, char* argv[]) {
         outf << "Actual count: " << count << endl;
         double cs = getCS(count, n_ztt, n_gamma, n_ww, n_tt);
         outf << "emu cross section: " << cs << endl;
-        outf << "Z->TT cross section: " << cs / (0.0620) << endl;
+        outf << "Z->TT cross section: " << cs / branch_ratio << endl;
 
         return 0;
 }
